@@ -6,10 +6,16 @@ RETURNS NVARCHAR(MAX)
 AS
 BEGIN
   DECLARE
-    @delimiters NVARCHAR(MAX) = ' _|,;:.!?~@#$%^&+-*=/',
-    @delimiters_max INT = 16,
-    @delimiters_idx INT = 0,
-    @delimiter NVARCHAR(1) = ''
+    @delimiters NVARCHAR(MAX),
+    @delimiters_max INT,
+    @delimiters_idx INT,
+    @delimiter NVARCHAR(1)
+
+  SELECT
+    @delimiters = ' _|,;:.!?~@#$%^&+-*=/',
+    @delimiters_max = 16,
+    @delimiters_idx = 0,
+    @delimiter = ''
 
   SELECT @delimiters_idx = ROUND(@delimiters_max * RandomValue, 0)
   FROM AngenRandom
@@ -28,8 +34,11 @@ BEGIN
   FROM AngenRandom
 
   SELECT @adjective = AdjectiveValue
-  FROM AngenAdjectives
-  ORDER BY AdjectiveValue OFFSET @adjectives_idx ROWS FETCH NEXT 1 ROWS ONLY
+  FROM (
+    SELECT AdjectiveValue, ROW_NUMBER() OVER(ORDER BY AdjectiveValue) RN
+    FROM AngenAdjectives
+  ) T
+  WHERE RN = @adjectives_idx
 
   DECLARE
     @names_max INT,
@@ -43,8 +52,11 @@ BEGIN
   FROM AngenRandom
 
   SELECT @name = NameValue
-  FROM AngenNames
-  ORDER BY NameValue OFFSET @names_idx ROWS FETCH NEXT 1 ROWS ONLY
+  FROM (
+    SELECT NameValue, ROW_NUMBER() OVER(ORDER BY NameValue) RN
+    FROM AngenNames
+  ) T
+  WHERE RN = @names_idx
 
   DECLARE
     @number NVARCHAR(MAX)
